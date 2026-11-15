@@ -5,6 +5,19 @@ import pygame
 from breakout.game import Game, GameState
 
 
+def handle_launch_input(game: Game, event: pygame.event.Event) -> bool:
+    """Consume a fresh launch press; blocked presses are never queued."""
+    space_pressed = (
+        event.type == pygame.KEYDOWN
+        and event.key == pygame.K_SPACE
+        and not getattr(event, "repeat", False)
+    )
+    left_clicked = event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
+    if space_pressed or left_clicked:
+        return game.launch_ball()
+    return False
+
+
 def draw_countdown(screen: pygame.Surface, game: Game) -> None:
     """Draw the three lights only while launch is blocked."""
     if game.state != GameState.COUNTDOWN:
@@ -41,7 +54,9 @@ def main() -> None:
                     if game is None:
                         game = Game()
                     else:
-                        game.launch_ball()
+                        handle_launch_input(game, event)
+                elif game is not None:
+                    handle_launch_input(game, event)
 
             if not running:
                 break
@@ -66,7 +81,7 @@ def main() -> None:
                 draw_countdown(screen, game)
                 if game.state == GameState.BALL_ATTACHED:
                     label = prompt_font.render(
-                        "Pulsa ESPACIO para lanzar", True, (235, 238, 245)
+                        "Pulsa ESPACIO o clic izquierdo para lanzar", True, (235, 238, 245)
                     )
                     screen.blit(label, label.get_rect(center=(400, 300)))
             pygame.display.flip()
