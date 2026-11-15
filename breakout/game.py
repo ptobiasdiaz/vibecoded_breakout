@@ -11,6 +11,15 @@ class GameState(Enum):
     GAME_OVER = auto()
 
 
+@dataclass(eq=False)
+class Brick:
+    x: float
+    y: float
+    width: float = 70
+    height: float = 20
+    breakable: bool = True
+
+
 @dataclass
 class Ball:
     x: float
@@ -40,6 +49,9 @@ class Game:
         self.paddle_y = 550.0
         self.lives = 3
         self.balls: list[Ball] = []
+        self.level = 1
+        self.bricks: list[Brick] = []
+        self._pending_brick_destructions: list[Brick] = []
         self.start_level()
 
     @property
@@ -51,6 +63,36 @@ class Game:
         """Reset every level to a countdown with an attached, stationary ball."""
         if self.lives == 0:
             return
+        self.bricks = self._load_scenario(self.level)
+        self._pending_brick_destructions.clear()
+        self._reset_ball()
+
+    def _load_scenario(self, level: int) -> list[Brick]:
+        """Create fresh entities for the numbered level."""
+        rows = 3 + (level - 1) % 3
+        return [Brick(85 + column * 80, 60 + row * 30)
+                for row in range(rows) for column in range(8)]
+
+    def destroy_brick(self, brick: Brick) -> None:
+        """Queue a collision result; stale or repeated events are harmless."""
+        if (self.state == GameState.PLAYING and brick.breakable
+                and brick in self.bricks
+                and brick not in self._pending_brick_destructions):
+            self._pending_brick_destructions.append(brick)
+
+    def _resolve_level_completion(self) -> bool:
+        for brick in self._pending_brick_destructions:
+            if brick in self.bricks:
+                self.bricks.remove(brick)
+        self._pending_brick_destructions.clear()
+        if any(brick.breakable for brick in self.bricks):
+            return False
+        self.level += 1
+        self.start_level()
+        return True
+
+    def _reset_ball(self) -> None:
+        """Restart the countdown without rebuilding a partially cleared level."""
         self.state = GameState.COUNTDOWN
         self.countdown_remaining = self.COUNTDOWN_SECONDS
         self.balls = [Ball(self.paddle_x, self.paddle_y)]
@@ -91,10 +133,13 @@ class Game:
             self._bounce_off_borders(ball)
         self.balls = [ball for ball in self.balls
                       if ball.y - self.BALL_RADIUS <= self.HEIGHT]
+        # Resolve completion once, before charging for the last ball lost.
+        if self._resolve_level_completion():
+            return
         if not self.balls:
             self.lives -= 1
             if self.lives:
-                self.start_level()
+                self._reset_ball()
             else:
                 self.state = GameState.GAME_OVER
 
