@@ -26,7 +26,10 @@ def main() -> None:
         while running:
             dt = clock.tick(60) / 1000.0
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+                # Handle exit globally, before any screen-specific input.
+                if event.type == pygame.QUIT or (
+                    event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+                ):
                     running = False
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     if game is None:
