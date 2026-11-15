@@ -4,7 +4,7 @@ import pygame
 
 
 def main() -> None:
-    """Display the initial screen until the window is closed."""
+    """Display the initial screen until a global exit event is received."""
     try:
         pygame.init()
         screen = pygame.display.set_mode((800, 600))
@@ -20,8 +20,12 @@ def main() -> None:
         running = True
         while running:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+                # Handle exit globally, before any screen-specific input.
+                if event.type == pygame.QUIT or (
+                    event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+                ):
                     running = False
+                    break
 
             if not running:
                 break
