@@ -7,5 +7,8 @@ name = "vibecoded-breakout"
 version = "0.1.0"
 dependencies = ["pygame-ce"]
 
+[project.scripts]
+breakout = "breakout.main:main"
+
 [tool.setuptools]
-packages = []
+packages = ["breakout"]
