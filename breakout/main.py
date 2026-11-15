@@ -5,6 +5,12 @@ import pygame
 from breakout.game import Game, GameState
 
 
+def handle_paddle_input(game: Game, event: pygame.event.Event) -> None:
+    """Mouse positions are relative to the window containing the game area."""
+    if event.type == pygame.MOUSEMOTION:
+        game.move_player(event.pos[0])
+
+
 def handle_launch_input(game: Game, event: pygame.event.Event) -> bool:
     """Consume a fresh launch press; blocked presses are never queued."""
     space_pressed = (
@@ -33,7 +39,7 @@ def main() -> None:
     """Display the initial screen and run the level launch lifecycle."""
     try:
         pygame.init()
-        screen = pygame.display.set_mode((800, 600))
+        screen = pygame.display.set_mode((Game.ARENA_WIDTH, Game.ARENA_HEIGHT))
         pygame.display.set_caption("Breakout")
         clock = pygame.time.Clock()
         title_font = pygame.font.Font(None, 88)
@@ -59,6 +65,7 @@ def main() -> None:
                     else:
                         handle_launch_input(game, event)
                 elif game is not None:
+                    handle_paddle_input(game, event)
                     handle_launch_input(game, event)
 
             if not running:

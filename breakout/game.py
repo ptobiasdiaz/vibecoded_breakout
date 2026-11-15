@@ -10,6 +10,8 @@ class GameState(Enum):
 
 
 class Game:
+    ARENA_WIDTH = 800
+    ARENA_HEIGHT = 600
     COUNTDOWN_SECONDS = 3.0
     BALL_RADIUS = 8
     PADDLE_WIDTH = 100
@@ -21,8 +23,8 @@ class Game:
         second_light_color: tuple[int, int, int] = (255, 195, 70),
     ) -> None:
         self.countdown_colors = (first_light_color, second_light_color, (0, 255, 0))
-        self.paddle_x = 400.0
-        self.paddle_y = 550.0
+        self.paddle_x = self.ARENA_WIDTH / 2
+        self.paddle_y = self.ARENA_HEIGHT - 50.0
         self.start_level()
 
     @property
@@ -43,7 +45,11 @@ class Game:
         self.ball_y = self.paddle_y - self.PADDLE_HEIGHT / 2 - self.BALL_RADIUS
 
     def move_player(self, x: float) -> None:
-        self.paddle_x = max(self.PADDLE_WIDTH / 2, min(800 - self.PADDLE_WIDTH / 2, x))
+        """Move the paddle center horizontally, keeping its full width inside."""
+        self.paddle_x = max(
+            self.PADDLE_WIDTH / 2,
+            min(self.ARENA_WIDTH - self.PADDLE_WIDTH / 2, x),
+        )
         if self.state != GameState.PLAYING:
             self._attach_ball()
 
