@@ -10,6 +10,9 @@ class GameState(Enum):
 
 
 class Game:
+    WIDTH = 800
+    HEIGHT = 600
+    BORDER_WIDTH = 4
     COUNTDOWN_SECONDS = 3.0
     BALL_RADIUS = 8
     PADDLE_WIDTH = 100
@@ -68,3 +71,27 @@ class Game:
             return
         self.ball_x += self.ball_vx * dt
         self.ball_y += self.ball_vy * dt
+        self._bounce_off_borders()
+
+    def _bounce_off_borders(self) -> None:
+        """Reflect overshoot, including multiple side hits in a single frame."""
+        left = self.BORDER_WIDTH + self.BALL_RADIUS
+        right = self.WIDTH - left
+        span = right - left
+        offset = (self.ball_x - left) % (2 * span)
+        if offset == 0:
+            self.ball_x = left
+            self.ball_vx = abs(self.ball_vx)
+        elif offset == span:
+            self.ball_x = right
+            self.ball_vx = -abs(self.ball_vx)
+        elif offset < span:
+            self.ball_x = left + offset
+        else:
+            self.ball_x = right - (offset - span)
+            self.ball_vx = -self.ball_vx
+
+        top = self.BORDER_WIDTH + self.BALL_RADIUS
+        if self.ball_y <= top:
+            self.ball_y = top + (top - self.ball_y)
+            self.ball_vy = abs(self.ball_vy)

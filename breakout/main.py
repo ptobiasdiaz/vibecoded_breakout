@@ -29,11 +29,20 @@ def draw_countdown(screen: pygame.Surface, game: Game) -> None:
         pygame.draw.circle(screen, (255, 255, 255), center, 25, width=3)
 
 
+def draw_borders(screen: pygame.Surface, game: Game) -> None:
+    """Draw solid walls along the top and sides, leaving the bottom open."""
+    white = (255, 255, 255)
+    width = game.BORDER_WIDTH
+    pygame.draw.rect(screen, white, (0, 0, game.WIDTH, width))
+    pygame.draw.rect(screen, white, (0, 0, width, game.HEIGHT))
+    pygame.draw.rect(screen, white, (game.WIDTH - width, 0, width, game.HEIGHT))
+
+
 def main() -> None:
     """Display the initial screen and run the level launch lifecycle."""
     try:
         pygame.init()
-        screen = pygame.display.set_mode((800, 600))
+        screen = pygame.display.set_mode((Game.WIDTH, Game.HEIGHT))
         pygame.display.set_caption("Breakout")
         clock = pygame.time.Clock()
         title_font = pygame.font.Font(None, 88)
@@ -73,6 +82,7 @@ def main() -> None:
                 direction = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
                 game.move_player(game.paddle_x + direction * 400 * dt)
                 game.update(dt)
+                draw_borders(screen, game)
                 pygame.draw.rect(screen, (235, 238, 245), (
                     game.paddle_x - game.PADDLE_WIDTH / 2,
                     game.paddle_y - game.PADDLE_HEIGHT / 2,
