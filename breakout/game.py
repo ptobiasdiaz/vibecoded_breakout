@@ -1,5 +1,6 @@
 """Level lifecycle and ball launch rules, independent of rendering."""
 
+from dataclasses import dataclass
 from enum import Enum, auto
 
 
@@ -7,6 +8,15 @@ class GameState(Enum):
     COUNTDOWN = auto()
     BALL_ATTACHED = auto()
     PLAYING = auto()
+    GAME_OVER = auto()
+
+
+@dataclass
+class Ball:
+    x: float
+    y: float
+    vx: float = 0.0
+    vy: float = 0.0
 
 
 class Game:
@@ -26,8 +36,10 @@ class Game:
         second_light_color: tuple[int, int, int] = (255, 195, 70),
     ) -> None:
         self.countdown_colors = (first_light_color, second_light_color, (0, 255, 0))
-        self.paddle_x = self.ARENA_WIDTH / 2
-        self.paddle_y = self.ARENA_HEIGHT - 50.0
+        self.paddle_x = 400.0
+        self.paddle_y = 550.0
+        self.lives = 3
+        self.balls: list[Ball] = []
         self.start_level()
 
     @property
@@ -37,10 +49,11 @@ class Game:
 
     def start_level(self) -> None:
         """Reset every level to a countdown with an attached, stationary ball."""
+        if self.lives == 0:
+            return
         self.state = GameState.COUNTDOWN
         self.countdown_remaining = self.COUNTDOWN_SECONDS
-        self.ball_vx = 0.0
-        self.ball_vy = 0.0
+        self.balls = [Ball(self.paddle_x, self.paddle_y)]
         self._attach_ball()
 
     def _attach_ball(self) -> None:
@@ -48,12 +61,8 @@ class Game:
         self.ball_y = self.paddle_y - self.PADDLE_HEIGHT / 2 - self.BALL_RADIUS
 
     def move_player(self, x: float) -> None:
-        """Move the paddle center horizontally, keeping its full width inside."""
-        self.paddle_x = max(
-            self.PADDLE_WIDTH / 2,
-            min(self.ARENA_WIDTH - self.PADDLE_WIDTH / 2, x),
-        )
-        if self.state != GameState.PLAYING:
+        self.paddle_x = max(self.PADDLE_WIDTH / 2, min(800 - self.PADDLE_WIDTH / 2, x))
+        if self.state in (GameState.COUNTDOWN, GameState.BALL_ATTACHED):
             self._attach_ball()
 
     def launch_ball(self) -> bool:
@@ -73,31 +82,77 @@ class Game:
             if self.countdown_remaining == 0:
                 self.state = GameState.BALL_ATTACHED
         if self.state != GameState.PLAYING:
-            self._attach_ball()
+            if self.state != GameState.GAME_OVER:
+                self._attach_ball()
             return
-        self.ball_x += self.ball_vx * dt
-        self.ball_y += self.ball_vy * dt
-        self._bounce_off_borders()
+        for ball in self.balls:
+            ball.x += ball.vx * dt
+            ball.y += ball.vy * dt
+            self._bounce_off_borders(ball)
+        self.balls = [ball for ball in self.balls
+                      if ball.y - self.BALL_RADIUS <= self.HEIGHT]
+        if not self.balls:
+            self.lives -= 1
+            if self.lives:
+                self.start_level()
+            else:
+                self.state = GameState.GAME_OVER
 
-    def _bounce_off_borders(self) -> None:
+    def _bounce_off_borders(self, ball: Ball) -> None:
         """Reflect overshoot, including multiple side hits in a single frame."""
         left = self.BORDER_WIDTH + self.BALL_RADIUS
         right = self.WIDTH - left
         span = right - left
-        offset = (self.ball_x - left) % (2 * span)
+        offset = (ball.x - left) % (2 * span)
         if offset == 0:
-            self.ball_x = left
-            self.ball_vx = abs(self.ball_vx)
+            ball.x = left
+            ball.vx = abs(ball.vx)
         elif offset == span:
-            self.ball_x = right
-            self.ball_vx = -abs(self.ball_vx)
+            ball.x = right
+            ball.vx = -abs(ball.vx)
         elif offset < span:
-            self.ball_x = left + offset
+            ball.x = left + offset
         else:
-            self.ball_x = right - (offset - span)
-            self.ball_vx = -self.ball_vx
+            ball.x = right - (offset - span)
+            ball.vx = -ball.vx
 
         top = self.BORDER_WIDTH + self.BALL_RADIUS
-        if self.ball_y <= top:
-            self.ball_y = top + (top - self.ball_y)
-            self.ball_vy = abs(self.ball_vy)
+        if ball.y <= top:
+            ball.y = top + (top - ball.y)
+            ball.vy = abs(ball.vy)
+
+    @property
+    def ball_x(self) -> float:
+        """Access the primary ball for existing single-ball callers."""
+        return self.balls[0].x
+
+    @ball_x.setter
+    def ball_x(self, value: float) -> None:
+        self.balls[0].x = value
+
+    @property
+    def ball_y(self) -> float:
+        """Access the primary ball for existing single-ball callers."""
+        return self.balls[0].y
+
+    @ball_y.setter
+    def ball_y(self, value: float) -> None:
+        self.balls[0].y = value
+
+    @property
+    def ball_vx(self) -> float:
+        """Access the primary ball for existing single-ball callers."""
+        return self.balls[0].vx
+
+    @ball_vx.setter
+    def ball_vx(self, value: float) -> None:
+        self.balls[0].vx = value
+
+    @property
+    def ball_vy(self) -> float:
+        """Access the primary ball for existing single-ball callers."""
+        return self.balls[0].vy
+
+    @ball_vy.setter
+    def ball_vy(self, value: float) -> None:
+        self.balls[0].vy = value

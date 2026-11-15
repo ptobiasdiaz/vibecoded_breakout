@@ -42,8 +42,8 @@ class BorderTests(unittest.TestCase):
 
     def test_bottom_is_open(self):
         game = self.game_at(400, 590, 0, 300)
-        game.update(1)
-        self.assertEqual(game.ball_y, 890)
+        game.update(0.05)
+        self.assertEqual(game.ball_y, 605)
         self.assertEqual(game.ball_vy, 300)
         self.assertEqual(game.state, GameState.PLAYING)
 

@@ -95,9 +95,15 @@ def main() -> None:
                     game.paddle_y - game.PADDLE_HEIGHT / 2,
                     game.PADDLE_WIDTH, game.PADDLE_HEIGHT,
                 ))
-                pygame.draw.circle(screen, (255, 195, 70),
-                                   (round(game.ball_x), round(game.ball_y)),
-                                   game.BALL_RADIUS)
+                for ball in game.balls:
+                    pygame.draw.circle(screen, (255, 195, 70),
+                                       (round(ball.x), round(ball.y)),
+                                       game.BALL_RADIUS)
+                if game.state == GameState.GAME_OVER:
+                    label = prompt_font.render(
+                        "Partida terminada", True, (235, 238, 245)
+                    )
+                    screen.blit(label, label.get_rect(center=(400, 300)))
                 draw_countdown(screen, game)
                 if game.state == GameState.BALL_ATTACHED:
                     label = prompt_font.render(
