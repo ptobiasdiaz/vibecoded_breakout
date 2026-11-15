@@ -1,10 +1,19 @@
 """Executable entrypoint and initial screen for Breakout."""
 
-import math
-
 import pygame
 
 from breakout.game import Game, GameState
+
+
+def draw_countdown(screen: pygame.Surface, game: Game) -> None:
+    """Draw the three lights only while launch is blocked."""
+    if game.state != GameState.COUNTDOWN:
+        return
+    for index, color in enumerate(game.countdown_colors):
+        center = (320 + index * 80, 300)
+        if index < game.filled_countdown_lights:
+            pygame.draw.circle(screen, color, center, 25)
+        pygame.draw.circle(screen, (255, 255, 255), center, 25, width=3)
 
 
 def main() -> None:
@@ -57,11 +66,11 @@ def main() -> None:
                 pygame.draw.circle(screen, (255, 195, 70),
                                    (round(game.ball_x), round(game.ball_y)),
                                    game.BALL_RADIUS)
-                if game.state != GameState.PLAYING:
-                    message = (str(math.ceil(game.countdown_remaining))
-                               if game.state == GameState.COUNTDOWN
-                               else "Pulsa ESPACIO para lanzar")
-                    label = prompt_font.render(message, True, (235, 238, 245))
+                draw_countdown(screen, game)
+                if game.state == GameState.BALL_ATTACHED:
+                    label = prompt_font.render(
+                        "Pulsa ESPACIO para lanzar", True, (235, 238, 245)
+                    )
                     screen.blit(label, label.get_rect(center=(400, 300)))
             pygame.display.flip()
     finally:
