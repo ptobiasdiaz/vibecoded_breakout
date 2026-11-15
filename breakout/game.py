@@ -15,10 +15,20 @@ class Game:
     PADDLE_WIDTH = 100
     PADDLE_HEIGHT = 16
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        first_light_color: tuple[int, int, int] = (255, 70, 70),
+        second_light_color: tuple[int, int, int] = (255, 195, 70),
+    ) -> None:
+        self.countdown_colors = (first_light_color, second_light_color, (0, 255, 0))
         self.paddle_x = 400.0
         self.paddle_y = 550.0
         self.start_level()
+
+    @property
+    def filled_countdown_lights(self) -> int:
+        """Fill one light per elapsed second, including green at completion."""
+        return min(3, int(self.COUNTDOWN_SECONDS - self.countdown_remaining))
 
     def start_level(self) -> None:
         """Reset every level to a countdown with an attached, stationary ball."""
